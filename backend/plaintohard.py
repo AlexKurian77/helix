@@ -2,9 +2,8 @@ import requests
 import json
 import google.generativeai as genai 
 
-# --- 1. SETUP YOUR KEYS ---
-PROTOCOLS_IO_TOKEN = "501f27b98e2ff4c9b702a61cc11e97949601582914bd73b1aa1528e1d115c99a93a312cac371f889ac9b8341fd0bceb116ff28f65b22cf57968b5711426d1fda" 
-genai.configure(api_key="AIzaSyC5nEMPt9JcM3rspWR6m8LvvlO3tZLo27Y")
+from config import PROTOCOLS_IO_TOKEN, GEMINI_API_KEY
+genai.configure(api_key=GEMINI_API_KEY)
 
 def test_ai_scientist_pipeline():
     # --- PHASE 1: DYNAMIC TOPIC CHOOSING ---
