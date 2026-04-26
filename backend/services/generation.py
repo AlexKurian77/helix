@@ -25,7 +25,7 @@ def _get_client() -> Groq:
 # v2 System prompt — strict two-part prompt from plan.md
 # ---------------------------------------------------------------------------
 SYSTEM_PROMPT = """You are an experiment design expert. Return ONLY valid JSON.
-Schema: {"novelty_assessment":{"label":"exact|similar|new","justification":"str","references":["str"]},"plan":{"title":"str","objective":"str","protocol":[{"step_number":1,"title":"str","description":"str","duration":"str","notes":"str|null"}],"materials":[{"name":"str","quantity":"str","unit":"str","estimated_cost":0}],"budget":[{"category":"str","item":"str","cost":0}],"total_budget":0,"timeline":[{"phase":"str","duration":"str","description":"str"}],"total_duration":"str","validation_method":"str","citations":[{"title":"str"}]},"risks":[{"id":"r1","severity":"critical|moderate|low","title":"str","detail":"str","mitigation":"str"}],"assumptions":[{"text":"str","confidence":"high|medium|low"}],"feasibility":{"inventory_gaps":["str"],"recommended_substitutions":["str"],"constraint_violations":["str"]},"confidence":{"score":0,"factors":[{"factor":"str","impact":"positive|negative|neutral","detail":"str"}]}}
+Schema: {"answer": "str (conversational answer to user's question or refinement request)", "novelty_assessment":{"label":"exact|similar|new","justification":"str","references":["str"]},"plan":{"title":"str","objective":"str","protocol":[{"step_number":1,"title":"str","description":"str","duration":"str","notes":"str|null"}],"materials":[{"name":"str","quantity":"str","unit":"str","estimated_cost":0}],"budget":[{"category":"str","item":"str","cost":0}],"total_budget":0,"timeline":[{"phase":"str","duration":"str","description":"str"}],"total_duration":"str","validation_method":"str","citations":[{"title":"str"}]},"risks":[{"id":"r1","severity":"critical|moderate|low","title":"str","detail":"str","mitigation":"str"}],"assumptions":[{"text":"str","confidence":"high|medium|low"}],"feasibility":{"inventory_gaps":["str"],"recommended_substitutions":["str"],"constraint_violations":["str"]},"confidence":{"score":0,"factors":[{"factor":"str","impact":"positive|negative|neutral","detail":"str"}]}}
 Rules: Use retrieved context as foundation. Include realistic quantities/costs in USD. Include 2-3 risks. Confidence 0-100 reflects literature support and rigor. No markdown."""
 
 
@@ -58,7 +58,8 @@ TASK:
 3) Identify risks and assumptions.
 4) Assess feasibility — note any inventory gaps or substitutions.
 5) Provide an honest confidence score (0-100) with supporting factors.
-6) Return strict JSON only matching the required schema."""
+6) Provide a direct answer to the user's question or explain your reasoning in the 'answer' field.
+7) Return strict JSON only matching the required schema."""
 
     client = _get_client()
     response = client.chat.completions.create(
@@ -145,7 +146,10 @@ TASK:
         except Exception:
             confidence = None
 
+    answer = raw.get("answer", "Plan updated successfully.")
+
     return {
+        "answer": answer,
         "experiment_plan": experiment_plan,
         "novelty_assessment": novelty,
         "risks": risks,
@@ -250,6 +254,7 @@ def _generate_demo_plan(query: str, context: list[dict]) -> dict:
     )
 
     # Demo v2 fields
+    answer = "This is a demo answer resolving your request successfully."
     novelty = NoveltyAssessment(
         label="similar",
         justification="Similar protocols exist in the literature but no exact match for this specific hypothesis was found.",
@@ -291,6 +296,7 @@ def _generate_demo_plan(query: str, context: list[dict]) -> dict:
     )
 
     return {
+        "answer": answer,
         "experiment_plan": experiment_plan,
         "novelty_assessment": novelty,
         "risks": risks,

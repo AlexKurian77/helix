@@ -86,12 +86,12 @@ async def generate(request: GenerateRequest):
         context_items.append(ContextItem(source="inferred", label="Cell Line", value="HepG2 (Liver Hepatoma)"))
         context_items.append(ContextItem(source="user", label="Constraint", value="Budget < $2,000"))
 
-    # Step 7: Return structured response with v2 fields
     return GenerateResponse(
         query=query,
         literature_qc=lit_qc,
         experiment_plan=plan,
         plan_id=plan_id,
+        answer=result.get("answer"),
         novelty_assessment=result.get("novelty_assessment"),
         risks=result.get("risks", []),
         assumptions=result.get("assumptions", []),

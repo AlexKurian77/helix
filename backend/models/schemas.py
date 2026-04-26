@@ -138,6 +138,7 @@ class GenerateResponse(BaseModel):
     plan_id: Optional[int] = None
 
     # v2 fields — natively returned by the LLM
+    answer: Optional[str] = None
     novelty_assessment: Optional[NoveltyAssessment] = None
     risks: list[Risk] = []
     assumptions: list[Assumption] = []

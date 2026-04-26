@@ -1,6 +1,14 @@
 import { Plan } from "@/lib/planData";
 
-export const HypothesisCard = ({ plan }: { plan: Plan }) => (
+export const HypothesisCard = ({
+  plan,
+  onExportReport,
+  onCopyProtocol,
+}: {
+  plan: Plan;
+  onExportReport: () => void | Promise<void>;
+  onCopyProtocol: () => void | Promise<void>;
+}) => (
   <div className="panel">
     <div className="panel-header">
       <div className="flex items-center gap-2">
@@ -8,11 +16,11 @@ export const HypothesisCard = ({ plan }: { plan: Plan }) => (
         <span className="label-num">· PLN-{plan.plan_id || "NEW"}</span>
       </div>
       <div className="flex items-center gap-2">
-        <button className="text-xs text-muted-foreground hover:text-accent inline-flex items-center gap-1">
+        <button onClick={onExportReport} className="text-xs text-muted-foreground hover:text-accent inline-flex items-center gap-1">
           <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none"><path d="M3 1v8m0 0L1 7m2 2l2-2M7 11V3m0 0L5 5m2-2l2 2" stroke="currentColor" strokeWidth="1.2" /></svg>
           export PDF
         </button>
-        <button className="text-xs text-muted-foreground hover:text-accent">copy protocol</button>
+        <button onClick={onCopyProtocol} className="text-xs text-muted-foreground hover:text-accent">copy protocol</button>
         <button className="text-xs text-muted-foreground hover:text-accent">share</button>
       </div>
     </div>

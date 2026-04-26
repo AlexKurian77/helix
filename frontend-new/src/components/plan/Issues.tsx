@@ -6,8 +6,23 @@ const SEV = {
   suggestion: { pill: "pill-info", label: "suggestion", border: "border-l-info", icon: "+" },
 } as const;
 
-export const Issues = ({ plan, onFixAll }: { plan: Plan; onFixAll: () => void }) => {
+interface IssuesProps {
+  plan: Plan;
+  onFixAll: () => void;
+  onApplyFix: (issue: Issue) => void;
+  onDismissIssue: (issue: Issue) => void;
+  onExplainIssue: (issue: Issue) => void;
+}
+
+export const Issues = ({ plan, onFixAll, onApplyFix, onDismissIssue, onExplainIssue }: IssuesProps) => {
   const issuesList = plan.issues || [];
+  const resolvedFixes = Array.from(
+    new Map(
+      (plan.context || [])
+        .filter((ctx) => ctx.label.startsWith("Applied mitigation:"))
+        .map((ctx) => [ctx.label + ctx.value, { title: ctx.label.replace("Applied mitigation:", "").trim(), detail: ctx.value }]),
+    ).values(),
+  );
   const counts = {
     critical: issuesList.filter((i) => i.severity === "critical").length,
     moderate: issuesList.filter((i) => i.severity === "moderate").length,
@@ -35,15 +50,46 @@ export const Issues = ({ plan, onFixAll }: { plan: Plan; onFixAll: () => void })
             <div className="text-success text-2xl mb-1">✓</div>
             <div className="text-sm text-foreground font-medium">No outstanding issues</div>
             <div className="text-xs text-muted-foreground mt-0.5">Plan is execution-ready.</div>
+            {resolvedFixes.length > 0 && (
+              <div className="mt-4 text-left bg-surface-sunken border border-border rounded p-3">
+                <div className="label-num mb-2">how issues were fixed</div>
+                <div className="space-y-2">
+                  {resolvedFixes.slice(-4).reverse().map((fix, idx) => (
+                    <div key={`${fix.title}-${idx}`} className="text-xs leading-relaxed">
+                      <div className="text-foreground font-medium">{fix.title}</div>
+                      <div className="text-muted-foreground">{fix.detail}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
-        {issuesList.map((i) => <IssueRow key={i.id} issue={i} />)}
+        {issuesList.map((i) => (
+          <IssueRow
+            key={i.id}
+            issue={i}
+            onApplyFix={onApplyFix}
+            onDismissIssue={onDismissIssue}
+            onExplainIssue={onExplainIssue}
+          />
+        ))}
       </div>
     </div>
   );
 };
 
-const IssueRow = ({ issue }: { issue: Issue }) => {
+const IssueRow = ({
+  issue,
+  onApplyFix,
+  onDismissIssue,
+  onExplainIssue,
+}: {
+  issue: Issue;
+  onApplyFix: (issue: Issue) => void;
+  onDismissIssue: (issue: Issue) => void;
+  onExplainIssue: (issue: Issue) => void;
+}) => {
   const cfg = SEV[issue.severity];
   return (
     <div className={`p-4 border-l-2 ${cfg.border} hover:bg-surface-sunken transition-colors`}>
@@ -62,9 +108,9 @@ const IssueRow = ({ issue }: { issue: Issue }) => {
         <span className="text-foreground">{issue.fix}</span>
       </div>
       <div className="mt-2 flex gap-3">
-        <button className="text-[11px] text-accent hover:underline">apply fix</button>
-        <button className="text-[11px] text-muted-foreground hover:text-accent">dismiss</button>
-        <button className="text-[11px] text-muted-foreground hover:text-accent">explain reasoning</button>
+        <button onClick={() => onApplyFix(issue)} className="text-[11px] text-accent hover:underline">apply fix</button>
+        <button onClick={() => onDismissIssue(issue)} className="text-[11px] text-muted-foreground hover:text-accent">dismiss</button>
+        <button onClick={() => onExplainIssue(issue)} className="text-[11px] text-muted-foreground hover:text-accent">explain reasoning</button>
       </div>
     </div>
   );

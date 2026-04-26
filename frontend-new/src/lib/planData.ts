@@ -127,6 +127,7 @@ export interface Plan {
   plan_id?: number | null;
 
   // v2 fields — natively from the backend
+  answer?: string | null;
   novelty_assessment?: NoveltyAssessment | null;
   risks?: Risk[];
   assumptions?: Assumption[];

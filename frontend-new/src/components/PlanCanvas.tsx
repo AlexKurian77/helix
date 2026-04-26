@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plan } from "@/lib/planData";
+import { Plan, Issue } from "@/lib/planData";
 import { PlanHeader } from "@/components/plan/PlanHeader";
 import { HypothesisCard } from "@/components/plan/HypothesisCard";
 import { QCBanner } from "@/components/plan/QCBanner";
@@ -12,6 +12,8 @@ import { Issues } from "@/components/plan/Issues";
 import { CommandBar } from "@/components/plan/CommandBar";
 import { Researchers } from "@/components/plan/Researchers";
 import { Confidence } from "@/components/plan/Confidence";
+import { toast } from "@/components/ui/use-toast";
+import { buildProtocolText, downloadPlanPdf } from "@/lib/reportExport";
 
 interface Props { hypothesis: string; onNew: () => void; onHub: () => void }
 
@@ -19,48 +21,74 @@ export const PlanCanvas = ({ hypothesis, onNew, onHub }: Props) => {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCommandBusy, setIsCommandBusy] = useState(false);
   const [activeTab, setActiveTab] = useState<"planning" | "findings">("planning");
+
+  const mapApiDataToPlan = (data: any): Plan => {
+    const issues = (data.risks || []).map((r: any) => ({
+      id: r.id,
+      severity: r.severity === "low" ? "suggestion" : r.severity,
+      affects: [],
+      title: r.title,
+      detail: r.detail,
+      fix: r.mitigation,
+    }));
+
+    return {
+      ...data,
+      issues,
+    };
+  };
+
+  const fetchGeneratedPlan = async (query: string, timeoutMs = 90000): Promise<Plan> => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+    let res: Response;
+    try {
+      res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+        signal: controller.signal,
+      });
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        throw new Error("Request timed out while updating the plan. Please try again.");
+      }
+      throw err;
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+
+    if (!res.ok) {
+      let errorMsg = `Server error: ${res.status}`;
+      try {
+        const text = await res.text();
+        try {
+          const errData = JSON.parse(text);
+          if (errData.detail) {
+            errorMsg = typeof errData.detail === "string" ? errData.detail : JSON.stringify(errData.detail);
+          }
+        } catch (_jsonErr) {
+          if (text) errorMsg = text;
+        }
+      } catch (_textErr) {}
+
+      throw new Error(errorMsg);
+    }
+
+    const data = await res.json();
+    return mapApiDataToPlan(data);
+  };
 
   useEffect(() => {
     const fetchPlan = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: hypothesis }),
-        });
-        if (!res.ok) {
-          let errorMsg = `Server error: ${res.status}`;
-          try {
-            const text = await res.text();
-            try {
-              const errData = JSON.parse(text);
-              if (errData.detail) {
-                errorMsg = typeof errData.detail === 'string' ? errData.detail : JSON.stringify(errData.detail);
-              }
-            } catch (e) {
-              if (text) errorMsg = text;
-            }
-          } catch (e) {}
-          throw new Error(errorMsg);
-        }
-        const data = await res.json();
-        // Derive issues from backend risks for the Issues component
-        const issues = (data.risks || []).map((r: any) => ({
-          id: r.id,
-          severity: r.severity === "low" ? "suggestion" : r.severity,
-          affects: [],
-          title: r.title,
-          detail: r.detail,
-          fix: r.mitigation,
-        }));
-        const plan: Plan = {
-          ...data,
-          issues,
-        };
-        setPlan(plan);
+        const generatedPlan = await fetchGeneratedPlan(hypothesis);
+        setPlan(generatedPlan);
       } catch (err: any) {
         setError(err.message || "An error occurred");
       } finally {
@@ -69,6 +97,27 @@ export const PlanCanvas = ({ hypothesis, onNew, onHub }: Props) => {
     };
     fetchPlan();
   }, [hypothesis]);
+
+  const copyText = async (text: string) => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "absolute";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    if (!copied) {
+      throw new Error("Clipboard copy failed");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -89,12 +138,193 @@ export const PlanCanvas = ({ hypothesis, onNew, onHub }: Props) => {
     );
   }
 
+  const handleExportReport = async () => {
+    try {
+      const fileName = await downloadPlanPdf(plan);
+      toast({
+        title: "Report exported",
+        description: `${fileName} downloaded`,
+      });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Export failed",
+        description: err?.message || "Could not export report",
+      });
+    }
+  };
+
+  const handleCopyProtocol = async () => {
+    try {
+      await copyText(buildProtocolText(plan));
+      toast({
+        title: "Protocol copied",
+        description: "The protocol is now in your clipboard.",
+      });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Copy failed",
+        description: err?.message || "Could not copy protocol",
+      });
+    }
+  };
+
+  const handleApplyFixIssue = (issue: Issue) => {
+    setPlan((current) => {
+      if (!current) return current;
+
+      const existingIssues = current.issues || [];
+      if (!existingIssues.some((i) => i.id === issue.id)) {
+        return current;
+      }
+
+      return {
+        ...current,
+        issues: existingIssues.filter((i) => i.id !== issue.id),
+        risks: (current.risks || []).filter((risk) => risk.id !== issue.id),
+        context: [
+          ...(current.context || []),
+          {
+            source: "user",
+            label: `Applied mitigation: ${issue.title}`,
+            value: issue.fix,
+          },
+        ],
+      };
+    });
+
+    toast({
+      title: "Fix applied",
+      description: issue.title,
+    });
+  };
+
+  const handleFixAllIssues = () => {
+    const issueCount = (plan.issues || []).length;
+    if (issueCount === 0) {
+      toast({
+        title: "No issues to fix",
+        description: "All known issues are already resolved.",
+      });
+      return;
+    }
+
+    setPlan((current) => {
+      if (!current) return current;
+
+      const existingIssues = current.issues || [];
+      if (existingIssues.length === 0) return current;
+
+      const issueIds = new Set(existingIssues.map((i) => i.id));
+      const resolutionContext = existingIssues.map((i) => ({
+        source: "user" as const,
+        label: `Applied mitigation: ${i.title}`,
+        value: i.fix,
+      }));
+
+      return {
+        ...current,
+        issues: [],
+        risks: (current.risks || []).filter((risk) => !issueIds.has(risk.id)),
+        context: [...(current.context || []), ...resolutionContext],
+      };
+    });
+
+    toast({
+      title: "All fixes applied",
+      description: `${issueCount} issue${issueCount === 1 ? "" : "s"} resolved.`,
+    });
+  };
+
+  const handleDismissIssue = (issue: Issue) => {
+    setPlan((current) => {
+      if (!current) return current;
+      const existingIssues = current.issues || [];
+      return {
+        ...current,
+        issues: existingIssues.filter((i) => i.id !== issue.id),
+      };
+    });
+
+    toast({
+      title: "Issue dismissed",
+      description: issue.title,
+    });
+  };
+
+  const handleExplainIssue = (issue: Issue) => {
+    toast({
+      title: issue.title,
+      description: `${issue.detail} Mitigation: ${issue.fix}`,
+    });
+  };
+
+  const COMMAND_PROMPTS: Record<string, string> = {
+    "Reduce cost": "Reduce total cost while preserving core validity and prioritize cheaper substitutes.",
+    "Make faster": "Shorten overall timeline while preserving feasibility and scientific quality.",
+    "Improve safety": "Increase safety controls, include hazard mitigation, and minimize risky steps.",
+    "Add controls": "Add positive and negative controls and strengthen validation design.",
+    "Use past experiment": "Reuse applicable procedures from prior experiments and highlight reused steps.",
+    "Optimize based on lab history": "Optimize this plan based on previous lab outcomes and known constraints.",
+    "Find best collaborator": "Prioritize assignment to the best-fit available collaborators and justify assignments.",
+  };
+
+  const buildRefinementQuery = (baseQuery: string, command: string): string => {
+    const normalized = COMMAND_PROMPTS[command] ?? command;
+    return [
+      `Original hypothesis: ${baseQuery}`,
+      `Refinement request: ${normalized}`,
+      "Return a fully updated plan with protocol, materials, timeline, budget, risks, and confidence.",
+    ].join("\n\n");
+  };
+
+  const handleCommand = async (cmd: string) => {
+    const trimmed = cmd.trim();
+    if (!trimmed || !plan || isCommandBusy) return;
+
+    const baseQuery = plan.query || hypothesis;
+    const refinedQuery = buildRefinementQuery(baseQuery, trimmed);
+
+    setIsCommandBusy(true);
+    try {
+      const nextPlan = await fetchGeneratedPlan(refinedQuery);
+      setPlan({
+        ...nextPlan,
+        query: baseQuery,
+        context: [
+          ...(nextPlan.context || []),
+          { source: "user", label: "Steer command", value: trimmed },
+        ],
+      });
+
+      toast({
+        title: "Plan updated",
+        description: `Applied: ${trimmed}`,
+      });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Command failed",
+        description: err?.message || "Could not apply the command",
+      });
+    } finally {
+      setIsCommandBusy(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-28 relative">
-      <PlanHeader plan={plan} onNew={onNew} onHub={onHub} />
+      <PlanHeader
+        plan={plan}
+        onNew={onNew}
+        onHub={onHub}
+        onExportReport={handleExportReport}
+        onCopyProtocol={handleCopyProtocol}
+      />
 
       <main className="max-w-[1400px] mx-auto px-6 py-6 space-y-4 animate-reveal">
-        <HypothesisCard plan={plan} />
+        <HypothesisCard plan={plan} onExportReport={handleExportReport} onCopyProtocol={handleCopyProtocol} />
         <QCBanner plan={plan} />
 
         <div className="flex items-center justify-between mt-6 border-b border-transparent pb-4">
@@ -137,17 +367,36 @@ export const PlanCanvas = ({ hypothesis, onNew, onHub }: Props) => {
 
         <div className="pt-2">
           {activeTab === "planning" && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              <div className="lg:col-span-7 space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+              <div className="lg:col-span-7">
                 <Protocol plan={plan} />
+              </div>
+              <div className="lg:col-span-5">
+                <Issues
+                  plan={plan}
+                  onFixAll={handleFixAllIssues}
+                  onApplyFix={handleApplyFixIssue}
+                  onDismissIssue={handleDismissIssue}
+                  onExplainIssue={handleExplainIssue}
+                />
+              </div>
+
+              <div className="lg:col-span-7">
                 <Materials plan={plan} />
               </div>
-              <div className="lg:col-span-5 space-y-4">
-                <Issues plan={plan} onFixAll={() => {}} />
-                <Confidence plan={plan} />
+              <div className="lg:col-span-5">
                 <Timeline plan={plan} />
+              </div>
+
+              <div className="lg:col-span-7">
                 <Researchers plan={plan} />
+              </div>
+              <div className="lg:col-span-5">
                 <Budget plan={plan} />
+              </div>
+
+              <div className="lg:col-span-12">
+                <Confidence plan={plan} />
               </div>
             </div>
           )}
@@ -159,7 +408,7 @@ export const PlanCanvas = ({ hypothesis, onNew, onHub }: Props) => {
       </main>
       
       <div className="fixed bottom-0 left-0 right-0 z-30 max-w-[1400px] mx-auto px-6">
-        <CommandBar onCommand={() => {}} />
+        <CommandBar onCommand={handleCommand} busy={isCommandBusy} lastAnswer={plan?.answer} />
       </div>
     </div>
   );

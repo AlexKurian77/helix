@@ -10,12 +10,24 @@ const QUICK = [
   { label: "Find best collaborator", icon: "👤" },
 ];
 
-interface Props { onCommand: (cmd: string) => void; busy?: boolean }
+interface Props { onCommand: (cmd: string) => void | Promise<void>; busy?: boolean; lastAnswer?: string | null }
 
-export const CommandBar = ({ onCommand, busy }: Props) => {
+export const CommandBar = ({ onCommand, busy, lastAnswer }: Props) => {
   const [val, setVal] = useState("");
   return (
     <div className="sticky bottom-0 z-30 bg-gradient-to-t from-background via-background to-transparent pt-6 pb-4">
+      {lastAnswer && (
+        <div className="mb-3 px-4 py-3 bg-surface border border-border rounded-lg shadow-sm animate-reveal">
+          <div className="flex gap-3 items-start">
+            <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center shrink-0 mt-0.5">
+              <span className="text-accent text-[10px] font-bold">AI</span>
+            </div>
+            <div className="text-sm text-foreground leading-relaxed">
+              {lastAnswer}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="panel shadow-[var(--shadow-raised)] overflow-hidden">
         <div className="px-4 pt-3 pb-2 flex flex-wrap gap-1.5 border-b border-border bg-surface-sunken">
           <span className="label-num self-center mr-1">steer</span>
