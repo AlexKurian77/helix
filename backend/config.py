@@ -34,3 +34,7 @@ EMBEDDING_DIMENSION = 1024
 # --- Retrieval ---
 TOP_K = int(os.getenv("TOP_K", "5"))
 OPENALEX_EMAIL = os.getenv("OPENALEX_EMAIL", "")
+
+# --- CORS ---
+ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080,http://127.0.0.1:8080").split(",")]
+

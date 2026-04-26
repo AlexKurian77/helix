@@ -4,7 +4,7 @@ AI-Powered Scientific Experiment Planning System.
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from config import DATABASE_URL, DEMO_MODE
+from config import DATABASE_URL, DEMO_MODE, ALLOWED_ORIGINS
 from models.database import init_engine, create_tables
 from routers import generate, history, simplify, lab, chat
 
@@ -18,12 +18,7 @@ app = FastAPI(
 # --- CORS (allow Next.js frontend) ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", 
-        "http://127.0.0.1:3000",
-        "http://localhost:8080",
-        "http://127.0.0.1:8080"
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
