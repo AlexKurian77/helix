@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChatMessage, seedAssistantMessage } from "@/lib/labData";
+import { API_BASE_URL } from "@/lib/api";
 
 const SUGGESTIONS = [
   "What did we learn from the starvation timecourse?",
@@ -27,7 +28,7 @@ export const MentorChat = () => {
     setThinking(true);
     
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(`${API_BASE_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: newMessages }),

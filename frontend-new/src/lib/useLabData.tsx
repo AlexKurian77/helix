@@ -2,7 +2,8 @@ import * as React from 'react';
 import { createContext, useContext, useState, useEffect } from 'react';
 import { PastExperiment, Researcher, Equipment } from './labData';
 
-const API_BASE_URL = '/api/lab';
+import { API_BASE_URL } from './api';
+const LAB_API_URL = `${API_BASE_URL}/lab`;
 
 interface LabDataContextType {
   equipment: Equipment[];
@@ -28,9 +29,9 @@ export function LabDataProvider({ children }: { children: React.ReactNode }): JS
     async function fetchData() {
       try {
         const [eqRes, resRes, expRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/inventory`),
-          fetch(`${API_BASE_URL}/researchers`),
-          fetch(`${API_BASE_URL}/experiments`),
+          fetch(`${LAB_API_URL}/inventory`),
+          fetch(`${LAB_API_URL}/researchers`),
+          fetch(`${LAB_API_URL}/experiments`),
         ]);
 
         if (eqRes.ok) {

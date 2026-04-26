@@ -14,6 +14,7 @@ import { Researchers } from "@/components/plan/Researchers";
 import { Confidence } from "@/components/plan/Confidence";
 import { toast } from "@/components/ui/use-toast";
 import { buildProtocolText, downloadPlanPdf } from "@/lib/reportExport";
+import { API_BASE_URL } from "@/lib/api";
 
 interface Props { hypothesis: string; onNew: () => void; onHub: () => void }
 
@@ -46,7 +47,7 @@ export const PlanCanvas = ({ hypothesis, onNew, onHub }: Props) => {
 
     let res: Response;
     try {
-      res = await fetch("/api/generate", {
+      res = await fetch(`${API_BASE_URL}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query }),
