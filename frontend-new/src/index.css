@@ -1,0 +1,227 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   SCIENTIFIC RESEARCH SOFTWARE — Design System
+   Dense, credible, lab-instrument aesthetic.
+   All colors HSL.
+   ============================================ */
+
+@layer base {
+  :root {
+    /* Paper-white scientific surface */
+    --background: 40 18% 97%;
+    --foreground: 215 28% 12%;
+
+    --surface: 40 22% 99%;
+    --surface-sunken: 40 14% 94%;
+    --surface-raised: 0 0% 100%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 28% 12%;
+
+    /* Deep ink — primary action / headings */
+    --primary: 215 35% 14%;
+    --primary-foreground: 40 22% 99%;
+
+    --secondary: 40 14% 92%;
+    --secondary-foreground: 215 28% 18%;
+
+    --muted: 40 12% 93%;
+    --muted-foreground: 215 12% 42%;
+
+    /* Lab-instrument cyan accent */
+    --accent: 188 70% 38%;
+    --accent-foreground: 0 0% 100%;
+    --accent-soft: 188 60% 94%;
+
+    /* Semantic — scientific signal colors */
+    --critical: 0 72% 45%;
+    --critical-foreground: 0 0% 100%;
+    --critical-soft: 0 70% 96%;
+
+    --warning: 32 92% 46%;
+    --warning-foreground: 0 0% 100%;
+    --warning-soft: 38 90% 95%;
+
+    --success: 152 55% 32%;
+    --success-foreground: 0 0% 100%;
+    --success-soft: 152 45% 94%;
+
+    --info: 215 65% 42%;
+    --info-foreground: 0 0% 100%;
+    --info-soft: 215 60% 95%;
+
+    --novel: 268 55% 48%;
+    --novel-soft: 268 50% 96%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 10% 86%;
+    --border-strong: 40 8% 76%;
+    --input: 40 10% 86%;
+    --ring: 188 70% 38%;
+
+    --radius: 0.375rem;
+
+    /* Typography */
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+    /* Effects */
+    --shadow-panel: 0 1px 0 hsl(40 10% 86%), 0 1px 2px hsl(215 28% 12% / 0.04);
+    --shadow-raised: 0 2px 0 hsl(40 10% 86%), 0 4px 16px hsl(215 28% 12% / 0.06);
+    --shadow-focus: 0 0 0 3px hsl(188 70% 38% / 0.18);
+
+    /* Sidebar (unused but kept) */
+    --sidebar-background: 40 18% 97%;
+    --sidebar-foreground: 215 28% 18%;
+    --sidebar-primary: 215 35% 14%;
+    --sidebar-primary-foreground: 40 22% 99%;
+    --sidebar-accent: 40 14% 92%;
+    --sidebar-accent-foreground: 215 28% 18%;
+    --sidebar-border: 40 10% 86%;
+    --sidebar-ring: 188 70% 38%;
+  }
+
+  .dark {
+    --background: 215 30% 8%;
+    --foreground: 40 18% 94%;
+    --surface: 215 28% 10%;
+    --surface-sunken: 215 32% 6%;
+    --surface-raised: 215 26% 12%;
+    --card: 215 28% 10%;
+    --card-foreground: 40 18% 94%;
+    --popover: 215 28% 10%;
+    --popover-foreground: 40 18% 94%;
+    --primary: 40 18% 94%;
+    --primary-foreground: 215 35% 14%;
+    --secondary: 215 24% 16%;
+    --secondary-foreground: 40 18% 94%;
+    --muted: 215 24% 14%;
+    --muted-foreground: 215 12% 62%;
+    --accent: 188 70% 48%;
+    --accent-foreground: 215 35% 8%;
+    --accent-soft: 188 50% 18%;
+    --critical: 0 70% 58%;
+    --critical-soft: 0 50% 18%;
+    --warning: 32 90% 56%;
+    --warning-soft: 32 50% 18%;
+    --success: 152 50% 50%;
+    --success-soft: 152 40% 16%;
+    --info: 215 70% 60%;
+    --info-soft: 215 40% 18%;
+    --novel: 268 60% 65%;
+    --novel-soft: 268 30% 20%;
+    --border: 215 22% 18%;
+    --border-strong: 215 20% 26%;
+    --input: 215 22% 18%;
+    --ring: 188 70% 48%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  html { font-family: var(--font-sans); }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+  }
+  ::selection { background: hsl(var(--accent) / 0.25); }
+}
+
+@layer components {
+  .font-display { font-family: var(--font-display); font-feature-settings: 'ss01'; }
+  .font-mono { font-family: var(--font-mono); }
+
+  /* Panel — the core surface unit */
+  .panel {
+    @apply bg-[hsl(var(--surface-raised))] border border-border rounded-md;
+    box-shadow: var(--shadow-panel);
+  }
+  .panel-header {
+    @apply flex items-center justify-between px-4 py-2.5 border-b border-border;
+  }
+  .panel-title {
+    @apply text-[11px] font-mono uppercase tracking-[0.12em] text-muted-foreground font-medium;
+  }
+  .panel-body { @apply p-4; }
+
+  /* Grid background — subtle scientific grid paper */
+  .bg-grid {
+    background-image:
+      linear-gradient(hsl(var(--border) / 0.5) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.5) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .bg-dots {
+    background-image: radial-gradient(hsl(var(--border-strong)) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* Status pills */
+  .pill {
+    @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono uppercase tracking-wider font-medium;
+  }
+  .pill-critical { @apply bg-[hsl(var(--critical-soft))] text-[hsl(var(--critical))]; }
+  .pill-warning  { @apply bg-[hsl(var(--warning-soft))]  text-[hsl(var(--warning))]; }
+  .pill-success  { @apply bg-[hsl(var(--success-soft))]  text-[hsl(var(--success))]; }
+  .pill-info     { @apply bg-[hsl(var(--info-soft))]     text-[hsl(var(--info))]; }
+  .pill-novel    { @apply bg-[hsl(var(--novel-soft))]    text-[hsl(var(--novel))]; }
+  .pill-muted    { @apply bg-muted text-muted-foreground; }
+
+  /* Numeric label */
+  .label-num {
+    @apply font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground;
+  }
+
+  /* Animated cursor */
+  .cursor-blink::after {
+    content: '▍';
+    @apply text-[hsl(var(--accent))] ml-0.5;
+    animation: blink 1s steps(2) infinite;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: hsl(var(--border-strong)); border-radius: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+}
+
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scan {
+  0% { transform: translateY(-100%); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 hsl(var(--accent) / 0.4); }
+  70% { box-shadow: 0 0 0 8px hsl(var(--accent) / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(var(--accent) / 0); }
+}
+
+.animate-reveal { animation: reveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, hsl(var(--accent) / 0.08), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+.animate-scan { animation: scan 2.4s ease-in-out infinite; }
+.animate-pulse-ring { animation: pulse-ring 2s infinite; }

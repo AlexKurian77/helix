@@ -1,0 +1,62 @@
+# --- General ---
+.DS_Store
+Thumbs.db
+.env
+.env.local
+.env.*.local
+*.log
+
+# --- Frontend (frontend-new) ---
+frontend-new/node_modules/
+frontend-new/dist/
+frontend-new/dist-ssr/
+frontend-new/*.local
+frontend-new/.vercel
+frontend-new/.netlify
+frontend-new/.next/
+frontend-new/build/
+
+# --- Backend (backend) ---
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/*.so
+backend/.Python
+backend/build/
+backend/develop-eggs/
+backend/dist/
+backend/downloads/
+backend/eggs/
+backend/.eggs/
+backend/lib/
+backend/lib64/
+backend/parts/
+backend/sdist/
+backend/var/
+backend/wheels/
+backend/pip-wheel-metadata/
+backend/share/python-wheels/
+backend/*.egg-info/
+backend/.installed.cfg
+backend/*.egg
+backend/MANIFEST
+backend/.venv/
+backend/venv/
+backend/ENV/
+backend/env/
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/.mypy_cache/
+backend/.ruff_cache/
+backend/instance/
+backend/.webassets-cache
+
+# --- IDEs ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Legacy ---
+frontend/
