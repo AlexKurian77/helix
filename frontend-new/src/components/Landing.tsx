@@ -1,15 +1,33 @@
 import { useState } from "react";
 
-interface Props { onSubmit: (h: string) => void; onHub?: () => void }
+interface Props {
+  onSubmit: (h: string) => void;
+  onRefine: (h: string) => Promise<string>;
+  onHub?: () => void;
+}
 
 const EXAMPLES = [
-  "Knockdown of TFEB in HepG2 cells will reduce autophagic flux under glucose starvation",
-  "CRISPR-mediated deletion of PD-L1 in B16 melanoma will increase CD8+ T-cell infiltration in vivo",
-  "Loss of mitochondrial fission protein DRP1 sensitizes neurons to oxidative stress",
+  "Can we build a cheap, fast blood test for inflammation?",
+  "Does a specific probiotic measurably strengthen the gut lining in mice?",
+  "Can we keep more cells alive when freezing them by swapping preservatives?",
 ];
 
-export const Landing = ({ onSubmit, onHub }: Props) => {
+export const Landing = ({ onSubmit, onRefine, onHub }: Props) => {
   const [val, setVal] = useState(EXAMPLES[0]);
+  const [isRefining, setIsRefining] = useState(false);
+
+  const handleRefine = async () => {
+    if (!val.trim() || isRefining) return;
+    setIsRefining(true);
+    try {
+      const refined = await onRefine(val);
+      if (refined) setVal(refined);
+    } catch (e) {
+      console.error("Refinement failed", e);
+    } finally {
+      setIsRefining(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background bg-grid relative overflow-hidden">
@@ -84,16 +102,38 @@ export const Landing = ({ onSubmit, onHub }: Props) => {
               <span className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-success" />constraint aware</span>
               <span className="flex items-center gap-1.5"><span className="w-1 h-1 rounded-full bg-success" />auditable</span>
             </div>
-            <button
-              type="submit"
-              disabled={!val.trim()}
-              className="bg-primary text-primary-foreground px-4 py-1.5 rounded text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-40 inline-flex items-center gap-2"
-            >
-              Generate plan
-              <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none">
-                <path d="M2 6h8m0 0L6.5 2.5M10 6L6.5 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleRefine}
+                disabled={!val.trim() || isRefining}
+                className="pill pill-accent/20 text-accent hover:bg-accent/30 transition-colors disabled:opacity-40 flex items-center gap-2 border border-accent/20"
+              >
+                {isRefining ? (
+                  <>
+                    <div className="w-3 h-3 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+                    Refining...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none">
+                      <path d="M6 2v8M2 6h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Scientific-ify
+                  </>
+                )}
+              </button>
+              <button
+                type="submit"
+                disabled={!val.trim() || isRefining}
+                className="bg-primary text-primary-foreground px-4 py-1.5 rounded text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-40 inline-flex items-center gap-2"
+              >
+                Generate plan
+                <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6h8m0 0L6.5 2.5M10 6L6.5 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
           </div>
         </form>
 

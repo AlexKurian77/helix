@@ -91,6 +91,7 @@ async def get_experiments():
         raise HTTPException(status_code=500, detail="Database unavailable")
     
     try:
+        from models.database import Experiment
         experiments = session.query(Experiment).order_by(Experiment.created_at.desc()).all()
         return [
             ExperimentResponse(
@@ -101,5 +102,36 @@ async def get_experiments():
             )
             for e in experiments
         ]
+    finally:
+        session.close()
+
+
+@router.delete("/experiments/{experiment_id}")
+async def delete_experiment(experiment_id: str):
+    """Delete an experiment and all related data from the lab history."""
+    session = get_session()
+    if not session:
+        raise HTTPException(status_code=500, detail="Database unavailable")
+    
+    try:
+        from models.database import ExperimentPlanVersion, RetrievalTrace, PlanPatch, Experiment
+        
+        experiment = session.query(Experiment).filter(Experiment.id == experiment_id).first()
+        if not experiment:
+            raise HTTPException(status_code=404, detail="Experiment not found")
+        
+        # Manually delete related data to ensure clean removal
+        session.query(ExperimentPlanVersion).filter(ExperimentPlanVersion.experiment_id == experiment_id).delete()
+        session.query(RetrievalTrace).filter(RetrievalTrace.experiment_id == experiment_id).delete()
+        session.query(PlanPatch).filter(PlanPatch.experiment_id == experiment_id).delete()
+        
+        # Delete the main experiment record
+        session.delete(experiment)
+        session.commit()
+        
+        return {"status": "success", "message": f"Experiment {experiment_id} and related data deleted"}
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         session.close()

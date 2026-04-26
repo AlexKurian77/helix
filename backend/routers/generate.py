@@ -40,7 +40,7 @@ async def generate(request: GenerateRequest):
     experiment_id = save_experiment(query)
 
     # Step 2: Retrieve relevant context
-    retrieved = retrieve_context(query)
+    retrieved = retrieve_context(query, exclude_id=experiment_id)
 
     # Step 2b: Save retrieval trace (v2)
     if experiment_id:

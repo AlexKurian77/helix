@@ -17,12 +17,12 @@ export const CommandBar = ({ onCommand, busy, lastAnswer }: Props) => {
   return (
     <div className="sticky bottom-0 z-30 bg-gradient-to-t from-background via-background to-transparent pt-6 pb-4">
       {lastAnswer && (
-        <div className="mb-3 px-4 py-3 bg-surface border border-border rounded-lg shadow-sm animate-reveal">
+        <div className="mb-4 px-4 py-3 bg-[hsl(var(--accent-soft)/0.5)] backdrop-blur-md border border-accent/20 border-l-4 border-l-accent rounded-r-lg rounded-l-sm shadow-lg animate-reveal">
           <div className="flex gap-3 items-start">
-            <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center shrink-0 mt-0.5">
-              <span className="text-accent text-[10px] font-bold">AI</span>
+            <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+              <span className="text-accent-foreground text-[10px] font-bold">AI</span>
             </div>
-            <div className="text-sm text-foreground leading-relaxed">
+            <div className="text-sm text-foreground leading-relaxed font-medium">
               {lastAnswer}
             </div>
           </div>

@@ -19,7 +19,7 @@ def _get_index():
     return _index
 
 
-def retrieve_context(query: str, top_k: int = TOP_K) -> list[dict]:
+def retrieve_context(query: str, top_k: int = TOP_K, exclude_id: str = None) -> list[dict]:
     """
     Retrieve relevant context from Pinecone (protocols), OpenAlex (papers),
     AND Protocols.io (live lab protocols).
@@ -85,7 +85,7 @@ def retrieve_context(query: str, top_k: int = TOP_K) -> list[dict]:
     # 4. Search Past Lab Experiments (STATE grounding)
     try:
         from services.database_service import search_past_experiments
-        past_exps = search_past_experiments(query, limit=top_k // 3 + 1)
+        past_exps = search_past_experiments(query, limit=top_k // 3 + 1, exclude_id=exclude_id)
         retrieved.extend(past_exps)
         if past_exps:
             print(f"[Retrieval] Local database returned {len(past_exps)} past experiments")

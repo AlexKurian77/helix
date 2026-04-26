@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import DATABASE_URL, DEMO_MODE, ALLOWED_ORIGINS
 from models.database import init_engine, create_tables
-from routers import generate, history, simplify, lab, chat
+from routers import generate, history, simplify, lab, chat, hardtoplain_router
 
 # --- Initialize FastAPI ---
 app = FastAPI(
@@ -30,6 +30,7 @@ app.include_router(history.router, tags=["History"])
 app.include_router(simplify.router, tags=["Simplify"])
 app.include_router(lab.router, tags=["Lab State"])
 app.include_router(chat.router, tags=["Lab Mentor Chat"])
+app.include_router(hardtoplain_router.router, tags=["Refine"])
 
 
 # --- Startup event ---

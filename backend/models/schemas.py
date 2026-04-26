@@ -61,7 +61,7 @@ class BudgetItem(BaseModel):
 class TimelinePhase(BaseModel):
     phase: str
     duration: str
-    description: str
+    description: Optional[str] = None
 
 
 class Citation(BaseModel):

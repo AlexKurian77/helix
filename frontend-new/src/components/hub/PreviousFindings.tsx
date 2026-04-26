@@ -1,6 +1,17 @@
 import { useState, useEffect } from "react";
 import { PastExperiment } from "@/lib/labData";
 import { useLabData } from "@/lib/useLabData";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const STATUS = {
   completed: { cls: "pill-success", label: "completed" },
@@ -12,7 +23,7 @@ const STATUS = {
 const getStatus = (s: string) => STATUS[s as keyof typeof STATUS] || { cls: "pill-info", label: s };
 
 export const PreviousFindings = ({ onReuse }: { onReuse: (e: PastExperiment) => void }) => {
-  const { pastExperiments, isLoading } = useLabData();
+  const { pastExperiments, isLoading, deleteExperiment } = useLabData();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "completed" | "inconclusive" | "in-progress">("all");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -154,9 +165,35 @@ export const PreviousFindings = ({ onReuse }: { onReuse: (e: PastExperiment) => 
                       <button className="text-[11px] px-2.5 py-1 rounded border border-border hover:border-accent text-muted-foreground hover:text-accent">
                         View full report
                       </button>
-                      <button className="text-[11px] px-2.5 py-1 rounded border border-border hover:border-accent text-muted-foreground hover:text-accent">
-                        Compare with new
-                      </button>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            onClick={(ev) => ev.stopPropagation()}
+                            className="text-[11px] px-2.5 py-1 rounded border border-border hover:border-destructive text-muted-foreground hover:text-destructive ml-auto transition-colors"
+                            title="Delete from database"
+                          >
+                            Delete
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Permanently delete experiment?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently remove "{e.title}" and all its related plan versions from the database. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => deleteExperiment(e.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete Permanently
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 )}

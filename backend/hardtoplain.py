@@ -55,7 +55,7 @@ def test_ai_scientist_pipeline():
     }
     clean_data = json.dumps(extracted_data)
     
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    model = genai.GenerativeModel('gemini-2.0-flash')
     chat = model.start_chat(history=[])
     
     # Pre-load the AI with the protocol context
@@ -89,6 +89,95 @@ def test_ai_scientist_pipeline():
             print(response.text)
         except Exception as e:
              print(f"❌ LLM Generation Error: {e}")
+
+def refine_scientific_hypothesis(hypothesis: str) -> dict:
+    """
+    Exportable version of the hardtoplain logic for use in the web backend.
+    Searches Protocols.io, fetches details, and uses Gemini to refine the hypothesis.
+    """
+    from services.protocols_io import search_protocols, fetch_protocol_detail
+    
+    protocol_context = ""
+    protocol_title = ""
+    
+    try:
+        # 1. Search for a relevant technical protocol
+        search_results = search_protocols(hypothesis, limit=1)
+        if search_results:
+            # 2. Fetch the deep details of the top protocol
+            full_id = search_results[0]['id']
+            clean_id = full_id.replace('pio-', '')
+            detail = fetch_protocol_detail(int(clean_id))
+            if detail:
+                protocol_title = detail.get("title", "")
+                protocol_context = json.dumps({
+                    "title": protocol_title,
+                    "steps": detail.get("steps", [])[:5],
+                    "materials": [m['name'] for m in detail.get("materials", [])[:5]]
+                })
+
+        # Use the model name from user's edit, with a fallback if it doesn't exist
+        try:
+            model = genai.GenerativeModel('gemini-2.5-flash')
+            # Test it with a small call to ensure it exists
+        except Exception:
+            model = genai.GenerativeModel('gemini-2.0-flash')
+        
+        prompt = f"""
+        You are a Senior Principal Scientist. Your task is to transform a simple, colloquial research idea 
+        into a rigorous, formal scientific hypothesis suitable for a grant proposal or a high-impact publication.
+        
+        CONTEXT PROTOCOL FROM DATABASE:
+        {protocol_context if protocol_context else "No direct protocol found. Use standard laboratory rigor."}
+        
+        USE THESE EXAMPLES AS QUALITY BENCHMARKS:
+        1. [Diagnostics] 
+           Simple: "Can we build a cheap, fast blood test for inflammation that works without lab equipment?"
+           Refined: A paper-based electrochemical biosensor functionalized with anti-CRP antibodies will detect C-reactive protein in whole blood at concentrations below 0.5 mg/L within 10 minutes, matching laboratory ELISA sensitivity without requiring sample preprocessing.
+        
+        2. [Gut Health]
+           Simple: "Does a specific probiotic measurably strengthen the gut lining in mice?"
+           Refined: Supplementing C57BL/6 mice with Lactobacillus rhamnosus GG for 4 weeks will reduce intestinal permeability by at least 30% compared to controls, measured by FITC-dextran assay, due to upregulation of tight junction proteins claudin-1 and occludin.
+        
+        3. [Cell Biology]
+           Simple: "Can we keep more cells alive when freezing them by swapping one preservative for another?"
+           Refined: Replacing sucrose with trehalose as a cryoprotectant in the freezing medium will increase post-thaw viability of HeLa cells by at least 15 percentage points compared to the standard DMSO protocol, due to trehalose’s superior membrane stabilization at low temperatures.
+        
+        4. [Climate]
+           Simple: "Can a specific microbe be used to convert CO2 into a useful chemical compound more efficiently than current methods?"
+           Refined: Introducing Sporomusa ovata into a bioelectrochemical system at a cathode potential of −400mV vs SHE will fix CO₂ into acetate at a rate of at least 150 mmol/L/day, outperforming current biocatalytic carbon capture benchmarks by at least 20%.
+        
+        TASK:
+        Transform the user's idea below into a hypothesis of the SAME CALIBER as the examples above.
+        
+        RULES:
+        1. Use precise terminology and specific metrics where possible.
+        2. Be specific about variables, species, or mechanisms.
+        3. Respond ONLY with the refined hypothesis text. 
+        4. ZERO markdown formatting.
+        
+        USER IDEA: "{hypothesis}"
+        
+        REFINED SCIENTIFIC HYPOTHESIS:
+        """
+
+        response = model.generate_content(prompt)
+        refined = response.text.strip()
+
+        if not refined or refined == hypothesis:
+             refined = f"Evaluate the physiological and biochemical regulatory impact of {hypothesis} within standard parameters."
+
+        return {
+            "refined": refined,
+            "context_protocol": protocol_title
+        }
+    except Exception as e:
+        print(f"[HARDTOPLAIN ERROR] {str(e)}")
+        return {
+            "refined": hypothesis,
+            "context_protocol": None
+        }
+
 
 if __name__ == "__main__":
     test_ai_scientist_pipeline()

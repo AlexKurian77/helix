@@ -78,6 +78,17 @@ TASK:
     # Extract plan section
     plan_data = raw.get("plan", raw)
 
+    # Sanitize timeline and protocol for Pydantic validation
+    if "timeline" in plan_data:
+        for item in plan_data["timeline"]:
+            if "description" not in item:
+                item["description"] = f"Planned duration: {item.get('duration', 'N/A')}"
+    
+    if "protocol" in plan_data:
+        for item in plan_data["protocol"]:
+            if "description" not in item:
+                item["description"] = "Execute as per standard laboratory SOP."
+
     # Map citations back to URLs from context
     final_citations = []
     raw_citations = plan_data.get("citations", [])

@@ -2,9 +2,20 @@ import { useState } from "react";
 import { Plan } from "@/lib/planData";
 import { PastExperiment } from "@/lib/labData";
 import { useLabData } from "@/lib/useLabData";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const FindingsView = ({ plan }: { plan: Plan }) => {
-  const { pastExperiments, isLoading } = useLabData();
+  const { pastExperiments, isLoading, deleteExperiment } = useLabData();
 
   if (isLoading) {
     return (
@@ -13,6 +24,10 @@ export const FindingsView = ({ plan }: { plan: Plan }) => {
       </div>
     );
   }
+
+  const handleDismiss = async (id: string) => {
+    await deleteExperiment(id);
+  };
 
   const similar = (pastExperiments as any[])
     .map(e => ({
@@ -49,7 +64,7 @@ export const FindingsView = ({ plan }: { plan: Plan }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-7 space-y-4">
-          <SimilarExperiments items={similar} />
+          <SimilarExperiments items={similar} onDismiss={handleDismiss} />
           {similar.length > 0 ? (
             <ComparisonView current={plan} past={similar[0]} />
           ) : (
@@ -68,7 +83,7 @@ export const FindingsView = ({ plan }: { plan: Plan }) => {
 };
 
 // --- Similar experiments ---
-const SimilarExperiments = ({ items }: { items: PastExperiment[] }) => (
+const SimilarExperiments = ({ items, onDismiss }: { items: PastExperiment[]; onDismiss: (id: string) => void }) => (
   <div className="panel">
     <div className="panel-header">
       <span className="panel-title">previous similar experiments · STATE retrieval</span>
@@ -99,6 +114,35 @@ const SimilarExperiments = ({ items }: { items: PastExperiment[] }) => (
                 </div>
               )}
             </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive-soft rounded transition-colors shrink-0"
+                  title="Dismiss experiment"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Dismiss experiment?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to dismiss "{e.title}" from this plan's context?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => onDismiss(e.id)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Confirm Dismiss
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       )) : (

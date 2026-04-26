@@ -224,7 +224,7 @@ def get_history(limit: int = 20) -> list[dict]:
         session.close()
 
 
-def search_past_experiments(query: str, limit: int = 5) -> list[dict]:
+def search_past_experiments(query: str, limit: int = 5, exclude_id: str = None) -> list[dict]:
     """Search for similar past experiments using keyword matching."""
     session = get_session()
     if session is None:
@@ -232,22 +232,33 @@ def search_past_experiments(query: str, limit: int = 5) -> list[dict]:
     try:
         from models.database import Experiment
         # Simple keyword matching for MVP
-        keywords = query.lower().split()
+        keywords = [k.lower() for k in query.lower().split() if len(k) > 3]
         
-        # Naive keyword matching for local experiments
-        experiments = session.query(Experiment).all()
+        # Query experiments, excluding the current one if ID provided
+        q = session.query(Experiment)
+        if exclude_id:
+            q = q.filter(Experiment.id != exclude_id)
+            
+        experiments = q.order_by(Experiment.created_at.desc()).limit(100).all()
         results = []
         for e in experiments:
             score = 0
             h = e.hypothesis.lower()
-            for kw in keywords:
-                if len(kw) > 3 and kw in h:
-                    score += 0.2
             
-            if score > 0:
+            # Simple term frequency match
+            matches = 0
+            for kw in keywords:
+                if kw in h:
+                    matches += 1
+            
+            if matches > 0 and len(keywords) > 0:
+                score = matches / len(keywords)
+                # Cap local experiment score at 0.9 to encourage looking for real literature too
+                final_score = min(0.9, score)
+                
                 results.append({
                     "id": str(e.id),
-                    "score": min(0.9, score),
+                    "score": round(final_score, 3),
                     "title": e.hypothesis,
                     "type": "past_experiment",
                     "domain": "laboratory",
