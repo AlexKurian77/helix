@@ -1,13 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Hub } from "@/components/Hub";
+import { Marketing } from "@/components/Marketing";
 import { Landing } from "@/components/Landing";
 import { StagedReasoning } from "@/components/StagedReasoning";
 import { PlanCanvas } from "@/components/PlanCanvas";
 import { Plan } from "@/lib/planData";
 import { API_BASE_URL } from "@/lib/api";
 
-type Stage = "hub" | "landing" | "generating" | "plan";
+type Stage = "marketing" | "hub" | "landing" | "generating" | "plan";
 
 const mapApiDataToPlan = (data: any): Plan => {
   const issues = (data.risks || []).map((r: any) => ({
@@ -30,7 +31,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   // stage state is now partially driven by URL
-  const [internalStage, setInternalStage] = useState<Stage>("hub");
+  const [internalStage, setInternalStage] = useState<Stage>("marketing");
   const [hypothesis, setHypothesis] = useState("");
   const [refinedHypothesis, setRefinedHypothesis] = useState("");
   const [contextProtocol, setContextProtocol] = useState("");
@@ -42,13 +43,15 @@ const Index = () => {
   // Sync internal stage with URL
   useEffect(() => {
     if (pathname === "/") {
+      setInternalStage("marketing");
+    } else if (pathname === "/hub") {
       setInternalStage("hub");
     } else if (pathname === "/new") {
       // Only force 'landing' if we aren't currently in the middle of generating or showing a plan
       setInternalStage((current) => (current === "generating" ? "generating" : "landing"));
     } else if (pathname === "/plan") {
       if (!prefetchedPlan && !fetchError) {
-        navigate("/");
+        navigate("/hub");
       } else {
         setInternalStage("plan");
       }
@@ -132,6 +135,9 @@ const Index = () => {
     return h;
   };
 
+  if (internalStage === "marketing") {
+    return <Marketing onEnter={() => navigate("/hub")} />;
+  }
   if (internalStage === "hub") {
     return <Hub onStart={() => navigate("/new")} />;
   }
@@ -140,7 +146,7 @@ const Index = () => {
       <Landing
         onSubmit={(h) => startGeneration(h)}
         onRefine={handleRefine}
-        onHub={() => navigate("/")}
+        onHub={() => navigate("/hub")}
       />
     );
   }
@@ -159,7 +165,7 @@ const Index = () => {
       initialPlan={prefetchedPlan}
       initialError={fetchError}
       onNew={() => navigate("/new")}
-      onHub={() => navigate("/")}
+      onHub={() => navigate("/hub")}
     />
   );
 };
