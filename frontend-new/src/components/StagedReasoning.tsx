@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const STAGES = [
   { label: "Parsing hypothesis", detail: "Identifying organism, gene targets, and measurable readouts", ms: 700 },
@@ -10,19 +10,39 @@ const STAGES = [
   { label: "Compiling execution plan", detail: "Materializing protocol, budget, hardware, timeline, confidence", ms: 600 },
 ];
 
-interface Props { onComplete: () => void }
+interface Props {
+  /** Called once the staged animation is done AND data is ready */
+  onComplete: () => void;
+  /** When true, the data has arrived and we can finish */
+  dataReady: boolean;
+  /** If set, an error occurred during data fetch */
+  error?: string | null;
+}
 
-export const StagedReasoning = ({ onComplete }: Props) => {
+export const StagedReasoning = ({ onComplete, dataReady, error }: Props) => {
   const [stage, setStage] = useState(0);
+  const [animDone, setAnimDone] = useState(false);
+  const completedRef = useRef(false);
 
+  // Advance through animated stages
   useEffect(() => {
     if (stage >= STAGES.length) {
-      const t = setTimeout(onComplete, 250);
-      return () => clearTimeout(t);
+      setAnimDone(true);
+      return;
     }
     const t = setTimeout(() => setStage((s) => s + 1), STAGES[stage].ms);
     return () => clearTimeout(t);
-  }, [stage, onComplete]);
+  }, [stage]);
+
+  // Once both animation is done AND data is ready (or errored), fire onComplete
+  useEffect(() => {
+    if (!animDone) return;
+    if (!dataReady && !error) return;
+    if (completedRef.current) return;
+    completedRef.current = true;
+    const t = setTimeout(onComplete, 350);
+    return () => clearTimeout(t);
+  }, [animDone, dataReady, error, onComplete]);
 
   return (
     <div className="min-h-screen bg-background bg-grid flex items-center justify-center px-6">
@@ -40,7 +60,22 @@ export const StagedReasoning = ({ onComplete }: Props) => {
 
         <div className="panel-body space-y-3">
           {STAGES.map((s, i) => {
-            const status = i < stage ? "done" : i === stage ? "active" : "pending";
+            const isLastStage = i === STAGES.length - 1;
+            let status: "done" | "active" | "pending";
+
+            if (i < stage) {
+              status = "done";
+            } else if (i === stage) {
+              status = "active";
+            } else {
+              status = "pending";
+            }
+
+            // Keep the last stage "active" (pulsing) until data arrives
+            if (isLastStage && animDone && !dataReady && !error) {
+              status = "active";
+            }
+
             return (
               <div
                 key={s.label}
@@ -68,10 +103,28 @@ export const StagedReasoning = ({ onComplete }: Props) => {
               </div>
             );
           })}
+
+          {/* Show error inline if the API failed */}
+          {error && animDone && (
+            <div className="flex items-start gap-3 mt-2 animate-reveal">
+              <div className="mt-1 w-4 flex justify-center">
+                <div className="w-2 h-2 rounded-full bg-destructive" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-destructive">Error encountered</div>
+                <div className="text-xs text-muted-foreground font-mono mt-0.5">{error}</div>
+              </div>
+              <span className="label-num text-destructive">ERR</span>
+            </div>
+          )}
         </div>
 
         <div className="px-4 py-2.5 border-t border-border bg-surface-sunken flex items-center justify-between">
-          <span className="label-num">stage {Math.min(stage + 1, STAGES.length)} / {STAGES.length}</span>
+          <span className="label-num">
+            {animDone && !dataReady && !error
+              ? `stage ${STAGES.length} / ${STAGES.length} · waiting for response…`
+              : `stage ${Math.min(stage + 1, STAGES.length)} / ${STAGES.length}`}
+          </span>
           <span className="label-num">grounded · constraint-aware · auditable</span>
         </div>
       </div>

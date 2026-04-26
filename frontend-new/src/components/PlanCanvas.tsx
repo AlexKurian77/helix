@@ -16,12 +16,18 @@ import { toast } from "@/components/ui/use-toast";
 import { buildProtocolText, downloadPlanPdf } from "@/lib/reportExport";
 import { API_BASE_URL } from "@/lib/api";
 
-interface Props { hypothesis: string; onNew: () => void; onHub: () => void }
+interface Props {
+  hypothesis: string;
+  onNew: () => void;
+  onHub: () => void;
+  initialPlan?: Plan | null;
+  initialError?: string | null;
+}
 
-export const PlanCanvas = ({ hypothesis, onNew, onHub }: Props) => {
-  const [plan, setPlan] = useState<Plan | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const PlanCanvas = ({ hypothesis, onNew, onHub, initialPlan = null, initialError = null }: Props) => {
+  const [plan, setPlan] = useState<Plan | null>(initialPlan);
+  const [isLoading, setIsLoading] = useState(!initialPlan && !initialError);
+  const [error, setError] = useState<string | null>(initialError);
   const [isCommandBusy, setIsCommandBusy] = useState(false);
   const [activeTab, setActiveTab] = useState<"planning" | "findings">("planning");
 
@@ -83,7 +89,9 @@ export const PlanCanvas = ({ hypothesis, onNew, onHub }: Props) => {
     return mapApiDataToPlan(data);
   };
 
+  // Only fetch if we didn't receive a pre-fetched plan (fallback for direct navigation)
   useEffect(() => {
+    if (initialPlan || initialError) return;
     const fetchPlan = async () => {
       setIsLoading(true);
       setError(null);
@@ -97,7 +105,7 @@ export const PlanCanvas = ({ hypothesis, onNew, onHub }: Props) => {
       }
     };
     fetchPlan();
-  }, [hypothesis]);
+  }, [hypothesis, initialPlan, initialError]);
 
   const copyText = async (text: string) => {
     if (navigator.clipboard?.writeText) {
