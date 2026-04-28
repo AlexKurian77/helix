@@ -76,7 +76,7 @@ DEMO_MODE=true  # Set to false for live API integration
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/AlexKurian77/helix.git
-   cd Hack-Nation
+   cd helix
    ```
 
 2. **Frontend Setup**:
