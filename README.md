@@ -75,7 +75,7 @@ DEMO_MODE=true  # Set to false for live API integration
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/AlexKurian77/Hack-Nation.git
+   git clone https://github.com/AlexKurian77/helix.git
    cd Hack-Nation
    ```
 
