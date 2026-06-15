@@ -4,12 +4,14 @@ export const PlanHeader = ({
   plan,
   onNew,
   onHub,
+  onProfile,
   onExportReport,
   onCopyProtocol,
 }: {
   plan: Plan;
   onNew: () => void;
   onHub?: () => void;
+  onProfile: () => void;
   onExportReport: () => void | Promise<void>;
   onCopyProtocol: () => void | Promise<void>;
 }) => (
@@ -33,6 +35,7 @@ export const PlanHeader = ({
         <span className="pill pill-success">● execution-ready</span>
       </div>
       <div className="flex items-center gap-1">
+        <HeaderBtn onClick={onProfile}>profile</HeaderBtn>
         <HeaderBtn onClick={onExportReport}>↗ export PDF</HeaderBtn>
         <HeaderBtn onClick={onCopyProtocol}>copy protocol</HeaderBtn>
         <HeaderBtn>share</HeaderBtn>

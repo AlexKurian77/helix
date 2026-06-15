@@ -20,11 +20,12 @@ interface Props {
   hypothesis: string;
   onNew: () => void;
   onHub: () => void;
+  onProfile: () => void;
   initialPlan?: Plan | null;
   initialError?: string | null;
 }
 
-export const PlanCanvas = ({ hypothesis, onNew, onHub, initialPlan = null, initialError = null }: Props) => {
+export const PlanCanvas = ({ hypothesis, onNew, onHub, onProfile, initialPlan = null, initialError = null }: Props) => {
   const [plan, setPlan] = useState<Plan | null>(initialPlan);
   const [isLoading, setIsLoading] = useState(!initialPlan && !initialError);
   const [error, setError] = useState<string | null>(initialError);
@@ -328,6 +329,7 @@ export const PlanCanvas = ({ hypothesis, onNew, onHub, initialPlan = null, initi
         plan={plan}
         onNew={onNew}
         onHub={onHub}
+        onProfile={onProfile}
         onExportReport={handleExportReport}
         onCopyProtocol={handleCopyProtocol}
       />

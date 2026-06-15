@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from models.database import get_session, User, Lab
-from core.security import verify_password, get_password_hash, create_access_token, get_current_user
+from core.security import verify_password, get_password_hash, create_access_token, get_current_user, get_db
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -15,15 +15,6 @@ class UserCreate(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
-
-def get_db():
-    db = get_session()
-    if db is None:
-        raise HTTPException(status_code=500, detail="Database not configured")
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/signup", response_model=Token)
 def signup(user_data: UserCreate, db: Session = Depends(get_db)):
@@ -111,9 +102,62 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
 
 @router.get("/me")
 def get_me(current_user: User = Depends(get_current_user)):
+    is_google = verify_password("google-oauth-random-pw", current_user.hashed_password)
     return {
         "id": current_user.id,
         "name": current_user.name,
         "email": current_user.email,
+        "is_google": is_google,
     }
+
+class ProfileUpdate(BaseModel):
+    name: str
+
+@router.put("/me")
+def update_profile(data: ProfileUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not data.name.strip():
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
+    current_user.name = data.name.strip()
+    db.commit()
+    return {"status": "success", "message": "Profile updated", "name": current_user.name}
+
+class PasswordChange(BaseModel):
+    old_password: str
+    new_password: str
+
+@router.put("/change-password")
+def change_password(data: PasswordChange, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not verify_password(data.old_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect current password")
+    if len(data.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+    
+    current_user.hashed_password = get_password_hash(data.new_password)
+    db.commit()
+    return {"status": "success", "message": "Password changed successfully"}
+
+@router.delete("/me")
+def delete_account(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from models.database import Lab, Experiment, ExperimentPlanVersion, RetrievalTrace, PlanPatch, Researcher, InventoryItem
+    
+    # Fetch user's lab(s)
+    labs = db.query(Lab).filter(Lab.user_id == current_user.id).all()
+    for lab in labs:
+        # Delete dependent data manually to avoid FK constraint errors
+        experiment_ids = [str(e.id) for e in lab.experiments]
+        if experiment_ids:
+            db.query(ExperimentPlanVersion).filter(ExperimentPlanVersion.experiment_id.in_(experiment_ids)).delete(synchronize_session=False)
+            db.query(RetrievalTrace).filter(RetrievalTrace.experiment_id.in_(experiment_ids)).delete(synchronize_session=False)
+            db.query(PlanPatch).filter(PlanPatch.experiment_id.in_(experiment_ids)).delete(synchronize_session=False)
+            db.query(Experiment).filter(Experiment.lab_id == lab.id).delete(synchronize_session=False)
+        
+        # Delete researchers and inventory items
+        db.query(Researcher).filter(Researcher.lab_id == lab.id).delete(synchronize_session=False)
+        db.query(InventoryItem).filter(InventoryItem.lab_id == lab.id).delete(synchronize_session=False)
+        db.delete(lab)
+        
+    db.delete(current_user)
+    db.commit()
+    return {"status": "success", "message": "Account deleted successfully"}
+
 

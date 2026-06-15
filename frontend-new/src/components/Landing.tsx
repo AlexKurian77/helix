@@ -5,6 +5,7 @@ interface Props {
   onSubmit: (h: string) => void;
   onRefine: (h: string) => Promise<string>;
   onHub?: () => void;
+  onProfile: () => void;
   initialHypothesis?: string;
 }
 
@@ -14,7 +15,7 @@ const EXAMPLES = [
   "Can we keep more cells alive when freezing them by swapping preservatives?",
 ];
 
-export const Landing = ({ onSubmit, onRefine, onHub, initialHypothesis }: Props) => {
+export const Landing = ({ onSubmit, onRefine, onHub, onProfile, initialHypothesis }: Props) => {
   const { user } = useAuth();
   const [val, setVal] = useState(initialHypothesis || EXAMPLES[0]);
   const [isRefining, setIsRefining] = useState(false);
@@ -62,6 +63,12 @@ export const Landing = ({ onSubmit, onRefine, onHub, initialHypothesis }: Props)
           <div className="flex items-center gap-4">
             <span className="label-num hidden md:inline">connected to: <span className="text-foreground">{userLab} · BSL-2</span></span>
             <span className="pill pill-success">● online</span>
+            <button
+              onClick={onProfile}
+              className="text-xs px-2.5 py-1 rounded text-muted-foreground hover:text-foreground hover:bg-surface-sunken transition-colors font-mono uppercase tracking-wider"
+            >
+              profile
+            </button>
           </div>
         </div>
       </header>

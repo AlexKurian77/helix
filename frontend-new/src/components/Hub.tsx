@@ -4,9 +4,9 @@ import { useLabData } from "@/lib/useLabData";
 import { Globe, BookOpen, FlaskConical, Box } from "lucide-react";
 import { useAuth, getFirstName } from "@/lib/useAuth";
 
-interface Props { onStart: () => void; onReuse?: (e: any) => void; onViewReport?: (e: any) => void; }
+interface Props { onStart: () => void; onReuse?: (e: any) => void; onViewReport?: (e: any) => void; onProfile: () => void; }
 
-export const Hub = ({ onStart, onReuse, onViewReport }: Props) => {
+export const Hub = ({ onStart, onReuse, onViewReport, onProfile }: Props) => {
   const { researchers, equipment, pastExperiments, isLoading } = useLabData();
   const { user } = useAuth();
 
@@ -49,6 +49,12 @@ export const Hub = ({ onStart, onReuse, onViewReport }: Props) => {
           <div className="flex items-center gap-3">
             <span className="label-num hidden md:inline">{userLab} · BSL-2 · v0.5-beta</span>
             <span className="pill pill-success">● online</span>
+            <button
+              onClick={onProfile}
+              className="text-xs px-2.5 py-1 rounded text-muted-foreground hover:text-foreground hover:bg-surface-sunken transition-colors font-mono uppercase tracking-wider"
+            >
+              profile
+            </button>
             <button
               onClick={onStart}
               className="ml-2 bg-primary text-primary-foreground px-3.5 py-1.5 rounded text-xs font-medium hover:bg-primary/90 inline-flex items-center gap-2"

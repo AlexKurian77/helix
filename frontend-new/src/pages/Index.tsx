@@ -6,9 +6,10 @@ import { Landing } from "@/components/Landing";
 import { StagedReasoning } from "@/components/StagedReasoning";
 import { PlanCanvas } from "@/components/PlanCanvas";
 import { Plan } from "@/lib/planData";
+import { Profile } from "@/components/Profile";
 import { API_BASE_URL, fetchWithAuth } from "@/lib/api";
 
-type Stage = "marketing" | "hub" | "landing" | "generating" | "plan";
+type Stage = "marketing" | "hub" | "landing" | "generating" | "plan" | "profile";
 
 const mapApiDataToPlan = (data: any): Plan => {
   const issues = (data.risks || []).map((r: any) => ({
@@ -55,6 +56,8 @@ const Index = () => {
       } else {
         setInternalStage("plan");
       }
+    } else if (pathname === "/profile") {
+      setInternalStage("profile");
     }
   }, [pathname, prefetchedPlan, fetchError, navigate]);
 
@@ -173,6 +176,7 @@ const Index = () => {
         onViewReport={(e) => {
           loadFullReport(e.id, e.title || e.hypothesis);
         }}
+        onProfile={() => navigate("/profile")}
       />
     );
   }
@@ -182,6 +186,7 @@ const Index = () => {
         onSubmit={(h) => startGeneration(h)}
         onRefine={handleRefine}
         onHub={() => navigate("/hub")}
+        onProfile={() => navigate("/profile")}
         initialHypothesis={hypothesis}
       />
     );
@@ -195,6 +200,9 @@ const Index = () => {
       />
     );
   }
+  if (internalStage === "profile") {
+    return <Profile onHub={() => navigate("/hub")} />;
+  }
   return (
     <PlanCanvas
       hypothesis={hypothesis}
@@ -202,6 +210,7 @@ const Index = () => {
       initialError={fetchError}
       onNew={() => navigate("/new")}
       onHub={() => navigate("/hub")}
+      onProfile={() => navigate("/profile")}
     />
   );
 };
