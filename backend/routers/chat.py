@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List, Optional
+from core.security import get_current_user
+from models.database import User
 import os
 from groq import Groq
 from config import GROQ_API_KEY, GROQ_MODEL
@@ -18,7 +20,7 @@ class ChatRequest(BaseModel):
     messages: List[ChatMessage]
 
 @router.post("")
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, current_user: User = Depends(get_current_user)):
     """
     Mentor Chat endpoint — provides context-aware assistance based on lab history and state.
     """

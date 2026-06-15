@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChatMessage, seedAssistantMessage } from "@/lib/labData";
-import { API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL, fetchWithAuth } from "@/lib/api";
 
 const SUGGESTIONS = [
   "What did we learn from the starvation timecourse?",
@@ -28,7 +28,7 @@ export const MentorChat = () => {
     setThinking(true);
     
     try {
-      const res = await fetch(`${API_BASE_URL}/chat`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: newMessages }),
@@ -51,7 +51,7 @@ export const MentorChat = () => {
       <div className="panel-header">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-accent animate-pulse-ring" />
-          <span className="panel-title">lab mentor · context-aware</span>
+          <span className="panel-title">lab mentor</span>
         </div>
         <span className="label-num">grounded in STATE + WORLD</span>
       </div>

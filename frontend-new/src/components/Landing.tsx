@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useAuth, getFirstName } from "@/lib/useAuth";
 
 interface Props {
   onSubmit: (h: string) => void;
   onRefine: (h: string) => Promise<string>;
   onHub?: () => void;
+  initialHypothesis?: string;
 }
 
 const EXAMPLES = [
@@ -12,9 +14,14 @@ const EXAMPLES = [
   "Can we keep more cells alive when freezing them by swapping preservatives?",
 ];
 
-export const Landing = ({ onSubmit, onRefine, onHub }: Props) => {
-  const [val, setVal] = useState(EXAMPLES[0]);
+export const Landing = ({ onSubmit, onRefine, onHub, initialHypothesis }: Props) => {
+  const { user } = useAuth();
+  const [val, setVal] = useState(initialHypothesis || EXAMPLES[0]);
   const [isRefining, setIsRefining] = useState(false);
+
+  const firstName = user?.name ? getFirstName(user.name) : "Chen";
+  const userLab = firstName ? (firstName.includes("Lab") ? firstName : (firstName.endsWith('s') ? `${firstName} Lab` : `${firstName}'s Lab`)) : "Chen Lab";
+
 
   const handleRefine = async () => {
     if (!val.trim() || isRefining) return;
@@ -53,7 +60,7 @@ export const Landing = ({ onSubmit, onRefine, onHub }: Props) => {
             <span className="label-num">new research</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="label-num hidden md:inline">connected to: <span className="text-foreground">Chen Lab · BSL-2</span></span>
+            <span className="label-num hidden md:inline">connected to: <span className="text-foreground">{userLab} · BSL-2</span></span>
             <span className="pill pill-success">● online</span>
           </div>
         </div>

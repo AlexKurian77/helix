@@ -24,7 +24,6 @@ from datetime import datetime, timezone
 
 Base = declarative_base()
 
-
 def _uuid():
     return str(uuid.uuid4())
 
@@ -34,12 +33,30 @@ def _now():
 
 
 # ---------------------------------------------------------------------------
+# 0. USERS
+# ---------------------------------------------------------------------------
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    email = Column(Text, unique=True, nullable=False)
+    name = Column(Text, nullable=True)
+    hashed_password = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=_now)
+
+    labs = relationship("Lab", back_populates="user")
+
+
+
+
+# ---------------------------------------------------------------------------
 # 1. LABS
 # ---------------------------------------------------------------------------
 class Lab(Base):
     __tablename__ = "labs"
 
     id = Column(UUID(as_uuid=False), primary_key=True, default=_uuid)
+    user_id = Column(UUID(as_uuid=False), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
     name = Column(Text, nullable=False)
     domain = Column(Text, nullable=False)
     budget_limit = Column(Numeric(12, 2), nullable=True)
@@ -53,6 +70,7 @@ class Lab(Base):
     inventory = relationship("InventoryItem", back_populates="lab")
     experiments = relationship("Experiment", back_populates="lab")
     researchers = relationship("Researcher", back_populates="lab")
+    user = relationship("User", back_populates="labs")
 
 
 # ---------------------------------------------------------------------------

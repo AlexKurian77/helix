@@ -1,26 +1,32 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Globe, BookOpen, FlaskConical, Box } from "lucide-react";
+import { useAuth, getFirstName } from "@/lib/useAuth";
 
 interface Props { onEnter: () => void }
 
-const REASONING_LINES = [
-  { tag: "PARSE", text: "hypothesis decomposed → 3 entities, 1 mechanism" },
-  { tag: "WORLD", text: "Chen Lab · BSL-2 · 14 instruments · 7 scientists" },
-  { tag: "KNOWLEDGE", text: "847 papers retrieved · 12 protocols matched" },
-  { tag: "STATE", text: "EXP-2017 similar (84%) · 2 reusable components" },
-  { tag: "CONTEXT", text: "budget $2,500 · ChemiDoc free in 4h" },
-  { tag: "PLAN", text: "protocol drafted · 8 steps · 14 days · $1,840" },
-];
-
 export const Marketing = ({ onEnter }: Props) => {
+  const { user } = useAuth();
   const [shownLines, setShownLines] = useState(0);
+
+  const firstName = user?.name ? getFirstName(user.name) : "Chen";
+  const userLab = firstName ? (firstName.includes("Lab") ? firstName : (firstName.endsWith('s') ? `${firstName} Lab` : `${firstName}'s Lab`)) : "Chen Lab";
+
+  const reasoningLines = useMemo(() => [
+    { tag: "PARSE", text: "hypothesis decomposed → 3 entities, 1 mechanism" },
+    { tag: "WORLD", text: `${userLab} · BSL-2 · 14 instruments · 7 scientists` },
+    { tag: "KNOWLEDGE", text: "847 papers retrieved · 12 protocols matched" },
+    { tag: "STATE", text: "EXP-2017 similar (84%) · 2 reusable components" },
+    { tag: "CONTEXT", text: "budget $2,500 · ChemiDoc free in 4h" },
+    { tag: "PLAN", text: "protocol drafted · 8 steps · 14 days · $1,840" },
+  ], [userLab]);
 
   useEffect(() => {
     const id = setInterval(() => {
-      setShownLines((n) => (n >= REASONING_LINES.length ? 0 : n + 1));
+      setShownLines((n) => (n >= reasoningLines.length ? 0 : n + 1));
     }, 900);
     return () => clearInterval(id);
-  }, []);
+  }, [reasoningLines]);
+
 
   return (
     <div className="min-h-screen bg-background text-foreground bg-grid relative overflow-hidden">
@@ -116,13 +122,13 @@ export const Marketing = ({ onEnter }: Props) => {
                 </p>
               </div>
               <div className="p-4 space-y-2 min-h-[260px] font-mono text-[12px]">
-                {REASONING_LINES.slice(0, shownLines).map((l, i) => (
+                {reasoningLines.slice(0, shownLines).map((l, i) => (
                   <div key={i} className="flex items-start gap-3 animate-reveal">
                     <span className="label-num text-accent w-20 shrink-0 pt-0.5">{l.tag}</span>
                     <span className="text-foreground">{l.text}</span>
                   </div>
                 ))}
-                {shownLines < REASONING_LINES.length && (
+                {shownLines < reasoningLines.length && (
                   <div className="flex items-center gap-3">
                     <span className="label-num w-20 shrink-0">·</span>
                     <span className="text-muted-foreground cursor-blink">thinking</span>
@@ -265,7 +271,7 @@ export const Marketing = ({ onEnter }: Props) => {
               <span className="italic text-accent">Watch your lab think.</span>
             </h2>
             <p className="text-sm text-muted-foreground">
-              No setup. The Chen Lab demo environment is loaded — 7 scientists, 14 instruments, 24 prior experiments.
+              No setup. The {userLab} demo environment is loaded — 7 scientists, 14 instruments, 24 prior experiments.
             </p>
             <div className="pt-3">
               <button
@@ -290,7 +296,7 @@ export const Marketing = ({ onEnter }: Props) => {
             <span className="label-num ml-2">© 2026 · lab intelligence platform</span>
           </div>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span>Chen Lab demo · BSL-2</span>
+            <span>{userLab} demo · BSL-2</span>
             <span className="pill pill-success">● online</span>
           </div>
         </div>

@@ -2,7 +2,8 @@ import * as React from 'react';
 import { createContext, useContext, useState, useEffect } from 'react';
 import { PastExperiment, Researcher, Equipment } from './labData';
 
-import { API_BASE_URL } from './api';
+import { API_BASE_URL, fetchWithAuth } from './api';
+import { useAuth } from './useAuth';
 const LAB_API_URL = `${API_BASE_URL}/lab`;
 
 interface LabDataContextType {
@@ -26,14 +27,15 @@ export function LabDataProvider({ children }: { children: React.ReactNode }): JS
   const [researchers, setResearchers] = useState<Researcher[]>([]);
   const [pastExperiments, setPastExperiments] = useState<PastExperiment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { token } = useAuth();
 
   async function fetchData() {
     setIsLoading(true);
     try {
       const [eqRes, resRes, expRes] = await Promise.all([
-        fetch(`${LAB_API_URL}/inventory`),
-        fetch(`${LAB_API_URL}/researchers`),
-        fetch(`${LAB_API_URL}/experiments`),
+        fetchWithAuth(`${LAB_API_URL}/inventory`),
+        fetchWithAuth(`${LAB_API_URL}/researchers`),
+        fetchWithAuth(`${LAB_API_URL}/experiments`),
       ]);
 
       if (eqRes.ok) {
@@ -56,12 +58,16 @@ export function LabDataProvider({ children }: { children: React.ReactNode }): JS
   }
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (token) {
+      fetchData();
+    } else {
+      setIsLoading(false);
+    }
+  }, [token]);
 
   const deleteExperiment = async (id: string) => {
     try {
-      const res = await fetch(`${LAB_API_URL}/experiments/${id}`, {
+      const res = await fetchWithAuth(`${LAB_API_URL}/experiments/${id}`, {
         method: 'DELETE',
       });
       if (res.ok) {

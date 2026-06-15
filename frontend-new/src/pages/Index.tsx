@@ -6,7 +6,7 @@ import { Landing } from "@/components/Landing";
 import { StagedReasoning } from "@/components/StagedReasoning";
 import { PlanCanvas } from "@/components/PlanCanvas";
 import { Plan } from "@/lib/planData";
-import { API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL, fetchWithAuth } from "@/lib/api";
 
 type Stage = "marketing" | "hub" | "landing" | "generating" | "plan";
 
@@ -77,7 +77,7 @@ const Index = () => {
     const executeGeneration = async () => {
       try {
         // Step 1: Generate the plan (Refinement now happens manually on Landing page)
-        const genRes = await fetch(`${API_BASE_URL}/generate`, {
+        const genRes = await fetchWithAuth(`${API_BASE_URL}/generate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query: h }),
@@ -120,7 +120,7 @@ const Index = () => {
 
   const handleRefine = async (h: string): Promise<string> => {
     try {
-      const res = await fetch(`${API_BASE_URL}/refine`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/refine`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hypothesis: h }),
@@ -135,11 +135,46 @@ const Index = () => {
     return h;
   };
 
+  const loadFullReport = async (experimentId: string, hypothesisTitle: string) => {
+    setHypothesis(hypothesisTitle);
+    setPrefetchedPlan(null);
+    setFetchError(null);
+    setDataReady(false);
+    setInternalStage("generating");
+    
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/lab/experiments/${experimentId}/plan`);
+      if (!res.ok) {
+        throw new Error(`Failed to load report: ${res.status}`);
+      }
+      const data = await res.json();
+      setPrefetchedPlan(mapApiDataToPlan(data));
+      setDataReady(true);
+    } catch (err: any) {
+      setFetchError(err?.message || "Could not load report");
+      setDataReady(true);
+    }
+  };
+
   if (internalStage === "marketing") {
     return <Marketing onEnter={() => navigate("/hub")} />;
   }
   if (internalStage === "hub") {
-    return <Hub onStart={() => navigate("/new")} />;
+    return (
+      <Hub 
+        onStart={() => {
+          setHypothesis("");
+          navigate("/new");
+        }} 
+        onReuse={(e) => {
+          setHypothesis(e.title || e.hypothesis);
+          navigate("/new");
+        }}
+        onViewReport={(e) => {
+          loadFullReport(e.id, e.title || e.hypothesis);
+        }}
+      />
+    );
   }
   if (internalStage === "landing") {
     return (
@@ -147,6 +182,7 @@ const Index = () => {
         onSubmit={(h) => startGeneration(h)}
         onRefine={handleRefine}
         onHub={() => navigate("/hub")}
+        initialHypothesis={hypothesis}
       />
     );
   }

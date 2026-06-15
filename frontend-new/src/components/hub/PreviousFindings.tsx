@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { PastExperiment } from "@/lib/labData";
 import { useLabData } from "@/lib/useLabData";
+import { useAuth, getFirstName } from "@/lib/useAuth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,17 +23,24 @@ const STATUS = {
 
 const getStatus = (s: string) => STATUS[s as keyof typeof STATUS] || { cls: "pill-info", label: s };
 
-export const PreviousFindings = ({ onReuse }: { onReuse: (e: PastExperiment) => void }) => {
+export const PreviousFindings = ({ onReuse, onViewReport }: { onReuse: (e: PastExperiment) => void; onViewReport: (e: PastExperiment) => void }) => {
   const { pastExperiments, isLoading, deleteExperiment } = useLabData();
+  const { user } = useAuth();
+
+  const firstName = user?.name ? getFirstName(user.name) : "Chen";
+  const userLab = firstName ? (firstName.includes("Lab") ? firstName : (firstName.endsWith('s') ? `${firstName} Lab` : `${firstName}'s Lab`)) : "Chen Lab";
+
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "completed" | "inconclusive" | "in-progress">("all");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
 
   useEffect(() => {
-    if (pastExperiments.length > 0 && openId === null) {
+    if (pastExperiments.length > 0 && !hasAutoOpened) {
       setOpenId(pastExperiments[0].id);
+      setHasAutoOpened(true);
     }
-  }, [pastExperiments, openId]);
+  }, [pastExperiments, hasAutoOpened]);
 
   const filtered = pastExperiments.map(e => ({
     ...e,
@@ -40,7 +48,7 @@ export const PreviousFindings = ({ onReuse }: { onReuse: (e: PastExperiment) => 
     outcome: (e as any).outcome || "Confirmed significant modulation of target markers (p < 0.05).",
     learnings: (e as any).learnings || ["Optimal MOI established at 5.0", "Incubation period of 48h recommended", "Validate antibody lot before use"],
     tags: (e as any).tags || ["molecular", "validated", "internal"],
-    lead: (e as any).lead || "Dr. Chen"
+    lead: (e as any).lead || firstName
   })).filter((e) => {
     if (filter !== "all" && e.status !== filter) return false;
     if (!query) return true;
@@ -72,7 +80,7 @@ export const PreviousFindings = ({ onReuse }: { onReuse: (e: PastExperiment) => 
           <span className="panel-title">previous findings · STATE layer</span>
           <span className="label-num">{pastExperiments.length} experiments</span>
         </div>
-        <span className="label-num">Chen Lab</span>
+        <span className="label-num">{userLab}</span>
       </div>
 
       {/* Search + filter */}
@@ -162,7 +170,10 @@ export const PreviousFindings = ({ onReuse }: { onReuse: (e: PastExperiment) => 
                         <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
                         Reuse components
                       </button>
-                      <button className="text-[11px] px-2.5 py-1 rounded border border-border hover:border-accent text-muted-foreground hover:text-accent">
+                      <button
+                        onClick={(ev) => { ev.stopPropagation(); onViewReport(e); }}
+                        className="text-[11px] px-2.5 py-1 rounded border border-border hover:border-accent text-muted-foreground hover:text-accent"
+                      >
                         View full report
                       </button>
                       

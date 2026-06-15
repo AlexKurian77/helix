@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const QUICK = [
   { label: "Reduce cost", icon: "$" },
@@ -14,11 +14,21 @@ interface Props { onCommand: (cmd: string) => void | Promise<void>; busy?: boole
 
 export const CommandBar = ({ onCommand, busy, lastAnswer }: Props) => {
   const [val, setVal] = useState("");
+  const [dismissedAnswer, setDismissedAnswer] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (lastAnswer) {
+      setDismissedAnswer(null);
+    }
+  }, [lastAnswer]);
+
+  const showAnswer = lastAnswer && dismissedAnswer !== lastAnswer;
+
   return (
     <div className="sticky bottom-0 z-30 bg-gradient-to-t from-background via-background to-transparent pt-6 pb-4">
-      {lastAnswer && (
-        <div className="mb-4 px-4 py-3 bg-[hsl(var(--accent-soft)/0.5)] backdrop-blur-md border border-accent/20 border-l-4 border-l-accent rounded-r-lg rounded-l-sm shadow-lg animate-reveal">
-          <div className="flex gap-3 items-start">
+      {showAnswer && (
+        <div className="mb-4 px-4 py-3 bg-[hsl(var(--accent-soft)/0.5)] backdrop-blur-md border border-accent/20 border-l-4 border-l-accent rounded-r-lg rounded-l-sm shadow-lg animate-reveal relative group">
+          <div className="flex gap-3 items-start pr-8">
             <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
               <span className="text-accent-foreground text-[10px] font-bold">AI</span>
             </div>
@@ -26,6 +36,17 @@ export const CommandBar = ({ onCommand, busy, lastAnswer }: Props) => {
               {lastAnswer}
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => setDismissedAnswer(lastAnswer)}
+            className="absolute top-2 right-2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-surface-sunken transition-colors"
+            title="Dismiss explanation"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
       )}
       <div className="panel shadow-[var(--shadow-raised)] overflow-hidden">

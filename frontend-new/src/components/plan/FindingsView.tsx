@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plan } from "@/lib/planData";
 import { PastExperiment } from "@/lib/labData";
 import { useLabData } from "@/lib/useLabData";
+import { useAuth, getFirstName } from "@/lib/useAuth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,6 +17,8 @@ import {
 
 export const FindingsView = ({ plan }: { plan: Plan }) => {
   const { pastExperiments, isLoading, deleteExperiment } = useLabData();
+  const { user } = useAuth();
+  const firstName = user?.name ? getFirstName(user.name) : "Chen";
 
   if (isLoading) {
     return (
@@ -34,7 +37,7 @@ export const FindingsView = ({ plan }: { plan: Plan }) => {
       ...e,
       objective: e.objective || "Study the biological mechanisms and phenotypic effects in the target cellular model.",
       outcome: e.outcome || "Experiment completed with validated results recorded in lab ledger.",
-      lead: e.lead || "Dr. Chen",
+      lead: e.lead || firstName,
       // Fallback similarity if not provided by backend
       similarity: e.similarity ?? (plan.query.toLowerCase().split(' ').some(word => e.title.toLowerCase().includes(word)) ? 0.75 : 0.1)
     }))

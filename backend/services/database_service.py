@@ -224,7 +224,7 @@ def get_history(limit: int = 20) -> list[dict]:
         session.close()
 
 
-def search_past_experiments(query: str, limit: int = 5, exclude_id: str = None) -> list[dict]:
+def search_past_experiments(query: str, limit: int = 5, exclude_id: str = None, lab_id: str = None) -> list[dict]:
     """Search for similar past experiments using keyword matching."""
     session = get_session()
     if session is None:
@@ -238,6 +238,8 @@ def search_past_experiments(query: str, limit: int = 5, exclude_id: str = None) 
         q = session.query(Experiment)
         if exclude_id:
             q = q.filter(Experiment.id != exclude_id)
+        if lab_id:
+            q = q.filter(Experiment.lab_id == lab_id)
             
         experiments = q.order_by(Experiment.created_at.desc()).limit(100).all()
         results = []

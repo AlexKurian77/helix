@@ -1,6 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from hardtoplain import refine_scientific_hypothesis
+from core.security import get_current_user
+from models.database import User
 
 router = APIRouter()
 
@@ -13,7 +15,7 @@ class RefineResponse(BaseModel):
     context_protocol: str = None
 
 @router.post("/refine", response_model=RefineResponse)
-async def refine_hypothesis(request: RefineRequest):
+async def refine_hypothesis(request: RefineRequest, current_user: User = Depends(get_current_user)):
     """
     Directly uses the core logic from the root hardtoplain.py script.
     """

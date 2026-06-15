@@ -13,12 +13,15 @@ from services.database_service import (
     save_query, save_plan,
     save_experiment, save_plan_version, save_retrieval_trace,
 )
+from core.security import get_current_user
+from fastapi import Depends
+from models.database import User, Lab, get_session
 
 router = APIRouter()
 
 
 @router.post("/generate", response_model=GenerateResponse)
-async def generate(request: GenerateRequest):
+async def generate(request: GenerateRequest, current_user: User = Depends(get_current_user)):
     """
     Generate a complete experiment plan from a scientific question.
 
@@ -36,11 +39,20 @@ async def generate(request: GenerateRequest):
     # Step 1: Persist the query (legacy)
     query_id = save_query(query)
 
+    # Fetch user's lab
+    session = get_session()
+    lab_id = None
+    if session:
+        lab = session.query(Lab).filter(Lab.user_id == current_user.id).first()
+        if lab:
+            lab_id = str(lab.id)
+        session.close()
+
     # Step 1b: Create experiment (v2)
-    experiment_id = save_experiment(query)
+    experiment_id = save_experiment(query, lab_id=lab_id)
 
     # Step 2: Retrieve relevant context
-    retrieved = retrieve_context(query, exclude_id=experiment_id)
+    retrieved = retrieve_context(query, exclude_id=experiment_id, lab_id=lab_id)
 
     # Step 2b: Save retrieval trace (v2)
     if experiment_id:

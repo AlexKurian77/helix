@@ -14,7 +14,7 @@ import { Researchers } from "@/components/plan/Researchers";
 import { Confidence } from "@/components/plan/Confidence";
 import { toast } from "@/components/ui/use-toast";
 import { buildProtocolText, downloadPlanPdf } from "@/lib/reportExport";
-import { API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL, fetchWithAuth } from "@/lib/api";
 
 interface Props {
   hypothesis: string;
@@ -53,7 +53,7 @@ export const PlanCanvas = ({ hypothesis, onNew, onHub, initialPlan = null, initi
 
     let res: Response;
     try {
-      res = await fetch(`${API_BASE_URL}/generate`, {
+      res = await fetchWithAuth(`${API_BASE_URL}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query }),
@@ -323,7 +323,7 @@ export const PlanCanvas = ({ hypothesis, onNew, onHub, initialPlan = null, initi
   };
 
   return (
-    <div className="min-h-screen bg-background pb-28 relative">
+    <div className="min-h-screen bg-background pb-72 relative">
       <PlanHeader
         plan={plan}
         onNew={onNew}

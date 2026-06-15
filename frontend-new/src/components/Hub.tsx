@@ -2,11 +2,18 @@ import { PreviousFindings } from "@/components/hub/PreviousFindings";
 import { MentorChat } from "@/components/hub/MentorChat";
 import { useLabData } from "@/lib/useLabData";
 import { Globe, BookOpen, FlaskConical, Box } from "lucide-react";
+import { useAuth, getFirstName } from "@/lib/useAuth";
 
-interface Props { onStart: () => void }
+interface Props { onStart: () => void; onReuse?: (e: any) => void; onViewReport?: (e: any) => void; }
 
-export const Hub = ({ onStart }: Props) => {
+export const Hub = ({ onStart, onReuse, onViewReport }: Props) => {
   const { researchers, equipment, pastExperiments, isLoading } = useLabData();
+  const { user } = useAuth();
+
+  const userName = user?.name || "Dr. Chen";
+  const firstName = user?.name ? getFirstName(user.name) : "Chen";
+  const userLab = firstName ? (firstName.includes("Lab") ? firstName : (firstName.endsWith('s') ? `${firstName} Lab` : `${firstName}'s Lab`)) : "Chen Lab";
+
   
   const availResearchers = Array.isArray(researchers) ? researchers.filter((r) => r.availability === "available").length : 0;
   const availEquip = Array.isArray(equipment) ? equipment.filter((e) => e.available).length : 0;
@@ -40,7 +47,7 @@ export const Hub = ({ onStart }: Props) => {
             <span className="label-num">Lab Intelligence Hub</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="label-num hidden md:inline">Chen Lab · BSL-2 · v0.5-beta</span>
+            <span className="label-num hidden md:inline">{userLab} · BSL-2 · v0.5-beta</span>
             <span className="pill pill-success">● online</span>
             <button
               onClick={onStart}
@@ -57,7 +64,7 @@ export const Hub = ({ onStart }: Props) => {
         {/* Title row */}
         <div className="flex items-end justify-between gap-6 flex-wrap">
           <div>
-            <span className="label-num">welcome back, dr. chen</span>
+            <span className="label-num">welcome back, {userName.toLowerCase()}</span>
             <h1 className="font-display text-3xl md:text-4xl text-primary mt-1 tracking-tight">
               Your lab's <span className="italic text-accent">living memory</span>.
             </h1>
@@ -105,7 +112,15 @@ export const Hub = ({ onStart }: Props) => {
         {/* Two-column */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[600px]">
           <div className="lg:col-span-7 h-[680px]">
-            <PreviousFindings onReuse={() => onStart()} />
+            <PreviousFindings 
+              onReuse={(e) => {
+                if (onReuse) onReuse(e);
+                else onStart();
+              }}
+              onViewReport={(e) => {
+                if (onViewReport) onViewReport(e);
+              }}
+            />
           </div>
           <div className="lg:col-span-5 h-[680px]">
             <MentorChat />
